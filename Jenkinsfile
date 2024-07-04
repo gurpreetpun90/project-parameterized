@@ -1,18 +1,20 @@
 pipeline {
     agent any
     parameters {
-        run(name: 'BASE_BUILD', projectName: 'your-cipla-devlop-phase-A', description: 'Select the build to use as base')
+        string(name: 'BASE_BUILD', description: 'Build number to deploy')
     }
     stages {
-        stage('Trigger') {
+        stage('Deploy') {
             steps {
                 script {
-                    if (params.BASE_BUILD) {
-                        echo "Using build number ${params.BASE_BUILD}"
-                        // Add your build steps here
-                        sh "./deploy.sh --build ${params.BASE_BUILD}"
+                    def isWindows = (env.BUILD_OS == 'Windows_NT')
+                    
+                    if (isWindows) {
+                        bat 'echo Using build number %BASE_BUILD%'
+                        bat 'call deploy.bat --build %BASE_BUILD%'
                     } else {
-                        echo "No build number provided, skipping build."
+                        sh "echo Using build number $BASE_BUILD"
+                        sh "./deploy.sh --build $BASE_BUILD"
                     }
                 }
             }
@@ -20,10 +22,10 @@ pipeline {
     }
     post {
         success {
-            echo 'Build succeeded!'
+            echo 'Build and deployment succeeded!'
         }
         failure {
-            echo 'Build failed!'
+            echo 'Build or deployment failed!'
         }
     }
 }
